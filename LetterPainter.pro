@@ -7,5 +7,5 @@ HEADERS = \
 SOURCES = \
 	LetterPainter.cpp \
 	main.cpp
-win32:TARGET = ../bin-win32/LetterPainter
-unix:TARGET = ../bin/LetterPainter
+win32:TARGET = bin-win32/LetterPainter
+unix:TARGET = bin/LetterPainter
