@@ -1,0 +1,52 @@
+/**************************************************************************
+**       Title: 
+**    $RCSfile: $
+**   $Revision: $$Name:  $
+**       $Date: $
+**   Copyright: GPL $Author: $
+** Description:
+**
+**    
+**
+**-------------------------------------------------------------------------
+**
+**  $Log: $
+**
+**
+**************************************************************************/
+
+/*=========================================================================
+ *  DESCRIPTION OF FUNCTION:Canvas::getLabel() const
+ *  ==> see headerfile
+ *=======================================================================*/
+inline
+QString
+Canvas::getLabel() const
+{
+  return p_label;
+}
+
+/*=========================================================================
+ *  DESCRIPTION OF FUNCTION:Canvas::setLabel( QString label)
+ *  ==> see headerfile
+ *=======================================================================*/
+inline
+void
+Canvas::setLabel( QString label)
+{
+  p_label = label;
+}
+
+/*=========================================================================
+ *  DESCRIPTION OF FUNCTION:Canvas::isNotEmpty()
+ *  ==> see headerfile
+ *=======================================================================*/
+inline
+bool
+Canvas::isNotEmpty() const
+{
+  return p_buffer.size();
+}
+
+
+
