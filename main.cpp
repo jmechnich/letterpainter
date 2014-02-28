@@ -27,8 +27,7 @@ int main( int argc, char **argv )
   QApplication a( argc, argv );
   
   LetterPainter mainWindow;
-  mainWindow.setCaption( "LetterPainter V1.0");
-  a.setMainWidget( &mainWindow );
+  mainWindow.setWindowTitle( "LetterPainter V1.1");
   mainWindow.show();
   return a.exec();
 }

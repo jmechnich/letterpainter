@@ -17,15 +17,16 @@
 
 #include "LetterPainter.h"
 
-#include <qapplication.h>
-#include <qpainter.h>
-#include <qfiledialog.h>
-#include <qinputdialog.h>
-#include <qcolor.h>
-#include <qpopupmenu.h>
-#include <qmenubar.h>
-#include <qlabel.h>
-#include <qmessagebox.h>
+#include <QApplication>
+#include <QPainter>
+#include <QFileDialog>
+#include <QInputDialog>
+#include <QColor>
+#include <QMenu>
+#include <QMenuBar>
+#include <QLabel>
+#include <QMessageBox>
+#include <QMouseEvent>
 
 #include <iostream>
 #include <fstream>
@@ -59,14 +60,15 @@ istream& eatWsAndComments( istream& s)
  *  DESCRIPTION OF FUNCTION:Canvas::Canvas( QWidget* parent, const char* name)
  *  ==> see headerfile
  *=======================================================================*/
-Canvas::Canvas( QWidget* parent, const char* name)
-        : QWidget( parent, name, WNorthWestGravity ),
-          p_parent( parent), pen( Qt::red, 1 ), polyline(3),
+Canvas::Canvas( QWidget* parent)
+        : QWidget( parent),
+          p_parent( parent), pen( Qt::red, 1 ),
           mousePressed( FALSE ), p_label("-")
 {
-  setBackgroundMode( QWidget::PaletteBase);
+  setAttribute( Qt::WA_StaticContents);
+  setBackgroundRole( QPalette::Base);
 #ifndef QT_NO_CURSOR
-  setCursor( Qt::crossCursor );
+  setCursor( Qt::CrossCursor );
 #endif
   setFixedSize( 200, 200);
 }
@@ -90,18 +92,8 @@ Canvas::mouseMoveEvent( QMouseEvent* e)
         0 : y;
     tmp = QPoint( x, y);
     
-    if( !( polyline[0] == tmp))
-    {
-      QPainter painter;
-      painter.begin( this);
-      painter.setPen( pen );
-      polyline[2] = polyline[1];
-      polyline[1] = polyline[0];
-      polyline[0] = tmp;
-      painter.drawPolyline( polyline);
-      painter.end();
-      p_lineBuffer.push_back( tmp);
-    }
+    p_lineBuffer.push_back( tmp);
+    update();
   }
 }
 
@@ -115,17 +107,15 @@ Canvas::paintEvent( QPaintEvent* e)
   QWidget::paintEvent( e );
 
   if( p_buffer.size() != 0){
-    QPointArray tmp_polyline(3);
+    QPolygon tmp_polyline(3);
     vector<vector<QPoint> >::iterator buffer_it = p_buffer.begin();
     
     for( ; buffer_it != p_buffer.end(); buffer_it++){
       vector<QPoint>::iterator line_it = (*buffer_it).begin();
       tmp_polyline[2] = tmp_polyline[1] = tmp_polyline[0] = *line_it;
       line_it++;
-    
       for( ; line_it != (*buffer_it).end(); line_it++){
-        QPainter painter;
-        painter.begin( this);
+        QPainter painter(this);
         painter.setPen( pen );
         tmp_polyline[2] = tmp_polyline[1];
         tmp_polyline[1] = tmp_polyline[0];
@@ -133,6 +123,21 @@ Canvas::paintEvent( QPaintEvent* e)
         painter.drawPolyline( tmp_polyline);
         painter.end();
       }
+    }
+  }
+  if( p_lineBuffer.size() != 0){
+    QPolygon tmp_polyline(3);
+    vector<QPoint >::iterator line_it = p_lineBuffer.begin();
+    tmp_polyline[2] = tmp_polyline[1] = tmp_polyline[0] = *line_it;
+    line_it++;
+    for( ; line_it != p_lineBuffer.end(); line_it++){
+      QPainter painter(this);
+      painter.setPen( pen );
+      tmp_polyline[2] = tmp_polyline[1];
+      tmp_polyline[1] = tmp_polyline[0];
+      tmp_polyline[0] = *line_it;
+      painter.drawPolyline( tmp_polyline);
+      painter.end();
     }
   }
 }
@@ -179,7 +184,7 @@ Canvas::read( istream& is)
       p_buffer.push_back( p_lineBuffer);
     }
     is >> eatWsAndComments;
-    repaint(TRUE);
+    repaint();
   }
   else
   {
@@ -196,7 +201,7 @@ Canvas::write( ostream &os)
 {
   if( p_buffer.size() != 0)
   {
-    os << p_label.latin1() << " " << p_buffer.size() << endl;
+    os << p_label.toLatin1().constData() << " " << p_buffer.size() << endl;
     vector<vector<QPoint> >::iterator buffer_it = p_buffer.begin();
     
     for( ; buffer_it != p_buffer.end(); buffer_it++)
@@ -221,7 +226,6 @@ void
 Canvas::mousePressEvent( QMouseEvent* e)
 {
   mousePressed = TRUE;
-  polyline[2] = polyline[1] = polyline[0] = e->pos();
   p_lineBuffer.push_back( e->pos());
 }
 
@@ -232,6 +236,7 @@ Canvas::mousePressEvent( QMouseEvent* e)
 void
 Canvas::mouseReleaseEvent( QMouseEvent*)
 {
+  update();
   mousePressed = FALSE;
   if( p_lineBuffer.size() > 1)
   {
@@ -249,7 +254,7 @@ void
 Canvas::clearScreen()
 {
   p_buffer.clear();
-  repaint( TRUE);
+  repaint();
   p_label = "-";
   emit labelChanged( "-");
 }
@@ -262,11 +267,11 @@ Canvas::clearScreen()
  *                                                        const char* name)
  *  ==> see headerfile
  *=======================================================================*/
-LetterPainter::LetterPainter( QWidget* parent, const char* name)
-        :QWidget( parent, name)
+LetterPainter::LetterPainter( QWidget* parent)
+        :QWidget( parent)
 {
+  // left window Pane
   canvas = new Canvas( this );
-
   if( qApp->argc() == 2)
   {
     ifstream file( qApp->argv()[1]);
@@ -274,57 +279,59 @@ LetterPainter::LetterPainter( QWidget* parent, const char* name)
     file.close();
   }
   
-  QPopupMenu *file = new QPopupMenu( this);
-  CHECK_PTR( file);
-  
-  file->insertItem( "&Open File"    , this, SLOT( slotLoadFromFile()),
-                    CTRL+Key_O);
-  file->insertItem( "&Save File"    , this, SLOT( slotSaveToFile()  ),
-                    CTRL+Key_S);
-  file->insertSeparator();
-  file->insertItem( "E&xit"         , qApp, SLOT( quit()), CTRL+Key_Q);
-  
-  QPopupMenu *help = new QPopupMenu( this);
-  CHECK_PTR( help);
+  // right window pane
+  QWidget* rightPane = new QWidget;
 
-  help->insertItem( "&About", this, SLOT( slotAbout()), CTRL+Key_H);
-  
-  QMenuBar *menu = new QMenuBar( this);
-  CHECK_PTR( menu);
-
-  menu->insertItem( "&File"   , file);
-  menu->insertSeparator();
-  menu->insertItem( "&Help"   , help);
-  menu->setSeparator( QMenuBar::InWindowsStyle);
-  
-  layout = new QHBoxLayout( this);
-  layout->setMenuBar( menu);
-  layout->addWidget( canvas);
-  
-  bLoad         = new QPushButton( "Read stdin"    , this);
-  bSave         = new QPushButton( "Write stdout"  , this);
-  bClear        = new QPushButton( "Clear Screen"  , this);
-  
-  connect( bLoad, SIGNAL( clicked()), this, SLOT( slotLoad()));
-  connect( bSave, SIGNAL( clicked()), this, SLOT( slotSave()));
+  // buttons
+  bLoad         = new QPushButton( "Read stdin"  );
+  bSave         = new QPushButton( "Write stdout");
+  bClear        = new QPushButton( "Clear Screen");
+  connect( bLoad,  SIGNAL( clicked()), this, SLOT( slotLoad()));
+  connect( bSave,  SIGNAL( clicked()), this, SLOT( slotSave()));
   connect( bClear, SIGNAL( clicked()), this, SLOT( slotClear()));
-    
-  QVBoxLayout* buttons = new QVBoxLayout( layout);
-  buttons->addWidget( bLoad);
-  buttons->addWidget( bSave);
-  buttons->addWidget( bClear);
   
-  QHBoxLayout* labelLayout = new QHBoxLayout( buttons);
-  
-  QLabel* label = new QLabel( "Label:", this);
-  
-  labelLine     = new QLineEdit( canvas->getLabel(), this);
+  // label
+  QWidget* wlabel = new QWidget;
+  QLabel* label = new QLabel( "Label:");
+  labelLine     = new QLineEdit( canvas->getLabel());
   labelLine->setMaxLength( 1);
   connect( canvas, SIGNAL( labelChanged( const QString &)),
            labelLine, SLOT( setText( const QString &)));
 
+  QHBoxLayout* labelLayout = new QHBoxLayout();
   labelLayout->addWidget( label);
   labelLayout->addWidget( labelLine);
+  wlabel->setLayout( labelLayout);
+  
+  QVBoxLayout* buttonLayout = new QVBoxLayout;
+  buttonLayout->addWidget( bLoad);
+  buttonLayout->addWidget( bSave);
+  buttonLayout->addWidget( bClear);
+  buttonLayout->addWidget( wlabel);
+  rightPane->setLayout( buttonLayout);
+  
+  // menu bar
+  QMenu *file = new QMenu( "&File"   , this);
+  file->addAction( "&Open File"    , this, SLOT( slotLoadFromFile()),
+                   Qt::CTRL+Qt::Key_O);
+  file->addAction( "&Save File"    , this, SLOT( slotSaveToFile()  ),
+                   Qt::CTRL+Qt::Key_S);
+  file->addSeparator();
+  file->addAction( "E&xit"         , qApp, SLOT( quit()), Qt::CTRL+Qt::Key_Q);
+  
+  QMenu *help = new QMenu( "&Help"   , this);
+  help->addAction( "&About", this, SLOT( slotAbout()), Qt::CTRL+Qt::Key_H);
+  
+  QMenuBar *menu = new QMenuBar( this);
+  menu->addMenu( file);
+  menu->addSeparator();
+  menu->addMenu( help);
+  
+  layout = new QHBoxLayout();
+  layout->setMenuBar( menu);
+  layout->addWidget( canvas);
+  layout->addWidget( rightPane);
+  setLayout( layout);
   
   setFixedSize( 280, 200);
 }
@@ -373,11 +380,11 @@ LetterPainter::slotLoad()
 void
 LetterPainter::slotLoadFromFile()
 {
-  QString filename = QFileDialog::getOpenFileName( QString::null,
-                                                   "*.acd", this );
+  QString filename = QFileDialog::getOpenFileName( this, "Open File...",
+                                                   QString(), "*.acd");
   if( !filename.isNull())
   {
-    ifstream file( filename.latin1());
+    ifstream file( filename.toLatin1().constData());
     canvas->read( file);
     file.close();
   }
@@ -403,12 +410,12 @@ LetterPainter::slotSaveToFile()
 {
   if( canvas->isNotEmpty())
   {
-    QString filename = QFileDialog::getSaveFileName( QString::null,
-                                                     "*.acd", this );
+    QString filename = QFileDialog::getSaveFileName( this, "Save File...",
+                                                     QString(), "*.acd" );
     if( !filename.isNull())
     {
       slotSetLabel();
-      ofstream file( filename.latin1());
+      ofstream file( filename.toLatin1().constData());
       canvas->write( file);
       file.close();
     }

@@ -17,16 +17,16 @@
 #ifndef LETTERPAINTER_H
 #define LETTERPAINTER_H
 
-#include <qwidget.h>
-#include <qevent.h>
-#include <qpen.h>
-#include <qpointarray.h>
-#include <qtoolbutton.h>
-#include <qpoint.h>
-#include <qstring.h>
-#include <qpushbutton.h>
-#include <qlayout.h>
-#include <qlineedit.h>
+#include <QWidget>
+#include <QEvent>
+#include <QPen>
+#include <QPolygon>
+#include <QToolButton>
+#include <QPoint>
+#include <QString>
+#include <QPushButton>
+#include <QLayout>
+#include <QLineEdit>
 
 #include <iostream>
 #include <vector>
@@ -51,7 +51,7 @@ public:
  *   Constructor
  */
 /*======================================================================*/
-  Canvas( QWidget *parent = 0, const char *name = 0 );
+  Canvas( QWidget *parent = 0 );
 
 /*======================================================================*/
 /*!
@@ -152,7 +152,6 @@ protected:
   QWidget* p_parent;
 
   QPen pen;
-  QPointArray polyline;
 
   bool mousePressed;
 
@@ -181,7 +180,7 @@ public:
  *   \param name The object's name
  */
 /*======================================================================*/
-  LetterPainter( QWidget* parent = 0, const char *name = 0 );
+  LetterPainter( QWidget* parent = 0 );
 
 protected:
 /*=========================================================================
