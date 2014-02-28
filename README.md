@@ -14,4 +14,4 @@ GUI for creating/displaying hand-drawn characters (for Irix, Linux, Windows)
 
 # Screenshot
 
-![](https://raw.github.com/jmechnich/letterpainter/master/letterpainter.png)
+![](https://raw.github.com/jmechnich/letterpainter/master/letterpainter.jpg)
