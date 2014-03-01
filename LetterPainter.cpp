@@ -333,7 +333,7 @@ LetterPainter::LetterPainter( QWidget* parent)
   layout->addWidget( rightPane);
   setLayout( layout);
   
-  setFixedSize( 280, 200);
+  setFixedSize( minimumSizeHint());
 }
 
 /*=========================================================================
